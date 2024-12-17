@@ -43,14 +43,14 @@ obstacles_img = pygame.transform.scale(obstacles_img, (60, 60))
 
 # Load Background Music
 pygame.mixer.music.load("assets/sounds/festive_theme.mp3")
-pygame.mixer.music.set_volume(0.5)  # Adjust background music volume
-pygame.mixer.music.play(-1)  # Loop music indefinitely
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 
 # Clock and Game Variables
 clock = pygame.time.Clock()
 lives = 10
 score = 0
-game_time = 600  # 10 minutes
+game_time = 600
 start_time = time.time()
 pause = False
 
@@ -68,6 +68,10 @@ santa_y = SCREEN_HEIGHT - 400
 gift_drop_timer = 0
 gifts = []
 
+# Grinch Variables
+grinch_spawn_timer = 0
+grinches = []
+
 # Obstacles Variables
 obstacle_spawn_timer = 0
 obstacles = []
@@ -84,6 +88,10 @@ def display_text(text, x, y, color=BLACK, size="small"):
 def spawn_gift():
     """Spawn a new gift below Santa."""
     return {"x": santa_x + 20, "y": santa_y}
+
+def spawn_grinch():
+    """Spawn a new Grinch at the right edge of the screen."""
+    return {"x": SCREEN_WIDTH, "y": SCREEN_HEIGHT - 150}
 
 def spawn_obstacle():
     """Spawn a new obstacle at the right edge."""
@@ -107,11 +115,12 @@ def end_screen(message):
 
 def reset_game():
     """Reset game variables to start over."""
-    global score, lives, santa_x, gifts, obstacles, start_time
+    global score, lives, santa_x, gifts, grinches, obstacles, start_time
     score = 0
     lives = 10
     santa_x = SCREEN_WIDTH - 100
     gifts.clear()
+    grinches.clear()
     obstacles.clear()
     start_time = time.time()
 
@@ -123,7 +132,7 @@ while running:
     current_time = int(game_time - (time.time() - start_time))
     if current_time <= 0:
         end_screen("YOU WON!")
-    screen.blit(background_img, (0, 0))  # Draw Background
+    screen.blit(background_img, (0, 0))
 
     # Event Handling
     for event in pygame.event.get():
@@ -173,6 +182,21 @@ while running:
             gifts.remove(gift)
             lives -= 1
 
+    # Grinch Logic
+    grinch_spawn_timer += 1
+    if grinch_spawn_timer > 200:
+        grinches.append(spawn_grinch())
+        grinch_spawn_timer = 0
+    for grinch in grinches[:]:
+        grinch["x"] -= 6
+        if grinch["x"] < -60:
+            grinches.remove(grinch)
+        for gift in gifts[:]:
+            if grinch["x"] < gift["x"] < grinch["x"] + 60 and grinch["y"] < gift["y"] < grinch["y"] + 60:
+                gifts.remove(gift)
+                grinches.remove(grinch)
+                score -= 5
+
     # Obstacles Logic
     obstacle_spawn_timer += 1
     if obstacle_spawn_timer > 150:
@@ -191,6 +215,8 @@ while running:
     screen.blit(player_img, (player_x, player_y))
     for gift in gifts:
         screen.blit(gift_img, (gift["x"], gift["y"]))
+    for grinch in grinches:
+        screen.blit(grinch_img, (grinch["x"], grinch["y"]))
     for obstacle in obstacles:
         screen.blit(obstacles_img, (obstacle["x"], obstacle["y"]))
 
